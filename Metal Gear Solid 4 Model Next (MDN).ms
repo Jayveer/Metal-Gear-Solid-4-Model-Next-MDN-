@@ -59,7 +59,7 @@ fn colorMesh mesh = (
 
 fsource = GetOpenFileName \
 caption:"Select mdn File" \
-types: "mdn(*.mdn)|*.mdn|All files (*.*)|*.*|"
+types: "Model Next(*.mdn)|*.mdn|All files (*.*)|*.*|"
 if fsource != undefined then (
 f = fopen fsource "rb"
 	
@@ -329,12 +329,11 @@ for i = 1 to mdnHeader.boneCount do (
 	sx =	boneIdx[i].sclX;	 sy = boneIdx[i].sclY; 		sz = boneIdx[i].sclZ;	 sw = boneIdx[i].sclW
 	qx =	boneIdx[i].sclX2;	 qy = boneIdx[i].sclY2; 	qz = boneIdx[i].sclZ2;	 qw = boneIdx[i].sclW2
 	
-	BoneRot = (quat rx ry rz rw) as matrix3
+	BoneRot = (quat rw ry rx rz) as matrix3
 	BonePos = [px,py,pz, pw]
-	BoneScl = [sx,sy,sz,sw] - [qx,qy,qz,qw]
 	
 	bne = dummy showLinks:true showLinksOnly:true
-	bne.scale = BoneScl
+	
 	bne.name = boneIdx[i].hashName as string
 	bne.rotation = BoneRot
 	bne.pos = BonePos
@@ -709,8 +708,6 @@ for s = 1 to mdnHeader.meshCount do (
 		delete d
 		
 		-----------------finished--------------------
-		
-		print "at s"
 		
 		for j = 1 to  weightBuffer[s].count do (
 			skinOps.unNormalizeVertex skinMod j true
