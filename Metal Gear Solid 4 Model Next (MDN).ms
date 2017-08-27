@@ -694,13 +694,11 @@ for s = 1 to mdnHeader.meshCount do (
 		modPanel.setCurrentObject skinMod -- this line isn't part of the workaround
 		
 		for j = 1 to  weightBuffer[s].count do (
-			skinOps.unNormalizeVertex skinMod j true
 			for p = 1 to 4 do (
 				if boneBuffer[s][j][p] != 255 then (
 					skinOps.SetVertexWeights skinMod j (boneBuffer[s][j][p] +1) weightBuffer[s][j][p]
 				)
 			)
-			skinOps.unNormalizeVertex skinMod j false
 		)
 		
 	max create mode
