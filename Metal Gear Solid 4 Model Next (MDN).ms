@@ -334,11 +334,11 @@ for i = 1 to mdnHeader.boneCount do (
 	
 	bne = dummy showLinks:true showLinksOnly:true
 	
-	bne.name = boneIdx[i].hashName as string
+	bne.name = bit.intAsHex(boneIdx[i].hashName) as string
 	bne.rotation = BoneRot
 	bne.pos = BonePos
 	
-	if (boneIdx[i].parent  != 0) then bne.parent = getNodeByName (boneIdx[(boneIdx[i].parent)].hashName as string)
+	if (boneIdx[i].parent  != 0) then bne.parent = getNodeByName (bit.intAsHex(boneIdx[(boneIdx[i].parent)].hashName) as string)
 	
 )
 
@@ -687,27 +687,11 @@ for s = 1 to mdnHeader.meshCount do (
 		bonepId = vertCountIdx[s].bonePalletId + 1
 		
 		for j =1 to bonePalletIdx[bonepId].count do (
-			maxBone = getnodeByName (boneIdx[(bonePalletIdx[bonepId].boneId[j])].hashName as string)
+			maxBone = getnodeByName (bit.intAsHex(boneIdx[(bonePalletIdx[bonepId].boneId[j])].hashName) as string)
 			skinOps.addBone skinMod maxBone 0
 		)
-	
-		----------------workaround-------------------
-		
-		d = dummy ()
-		skinOps.addBone skinMod d 1	
-		d.name = "dummy bone" -- work around, assign all weights a value of 1.0 to the dummy bone
-	
-		modPanel.setCurrentObject skinMod -- this line isn't part of the workaround
 
-		dummyBone = skinOps.GetNumberBones skinMod
-	
-		for j = 1 to  weightBuffer[s].count do (
-			skinOps.SetVertexWeights skinMod j dummyBone 1.0
-		)
-		
-		delete d
-		
-		-----------------finished--------------------
+		modPanel.setCurrentObject skinMod -- this line isn't part of the workaround
 		
 		for j = 1 to  weightBuffer[s].count do (
 			skinOps.unNormalizeVertex skinMod j true
