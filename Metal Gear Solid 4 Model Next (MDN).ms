@@ -95,8 +95,8 @@ struct Header (
 	meshCount,
 	faceCount,
 	vertDefCount,
-	count6,
 	materialCount,
+	textureCount,
 	bonePalletCount,
 	boneOffset,
 	count2Offset,
@@ -197,42 +197,54 @@ struct MdnVertexDefinition (
 	position
 )
 
-struct MdnCount6 (
-	size,
+struct MdnMaterialIndex (
+	flag,
 	hashName,
-	count,
-	count2,
-	count3,
-	count4,
-	count5,
-	count6,
-	count7,
-	count8,
-	count9,
-	count10,
-	someX,
-	someY,
-	someZ,
-	someW,
-	someX2,
-	someY2,
-	someZ2,
-	someW2,
-	someX3,
-	someY3,
-	someZ3,
-	someW3,
-	someX4,
-	someY4,
-	someZ4,
-	someW4,
-	nullBytes,
-	nullBytes2,
-	nullBytes3,
-	nullBytes4
+	textureCount,
+	colourCount,
+	diffuseIndex,
+	normalIndex,
+	specularIndex,
+	filterIndex,
+	ambientIndex,
+	specGradientIndex,
+	unknownIndex,
+	unknown2Index,
+	diffuseR,
+	diffuseG,
+	diffuseB,
+	diffuseA,
+	specularR,
+	specularG,
+	specularB,
+	specularA,
+	unknownR,
+	unknownG,
+	unknownB,
+	unknownA,
+	unknownR2,
+	unknownG2,
+	unknownB2,
+	unknownA2,
+	unknownR3,
+	unknownG3,
+	unknownB3,
+	unknownA3,
+	unknownR4,
+	unknownG4,
+	unknownB4,
+	unknownA4,
+	unknownR5,
+	unknownG5,
+	unknownB5,
+	unknownA5,
+	unknownR6,
+	unknownG6,
+	unknownB6,
+	unknownA6
 )
 
-struct MdnMaterialIndex (
+struct MdnTextureIndex (
 	
 	hashName,
 	x,
@@ -260,8 +272,8 @@ mdnHeader.count2 = readBElong f
 mdnHeader.meshCount = readBElong f
 mdnHeader.faceCount = readBElong f
 mdnHeader.vertDefCount = readBElong f
-mdnHeader.count6 = readBElong f
 mdnHeader.materialCount = readBElong f
+mdnHeader.textureCount = readBElong f
 mdnHeader.bonePalletCount = readBElong f
 mdnHeader.boneOffset = readBElong f
 mdnHeader.count2Offset = readBElong f
@@ -342,7 +354,7 @@ for i = 1 to mdnHeader.boneCount do (
 	
 )
 
----------------count2------------------------
+---------------meshgroup------------------------
 
 count2 = #()
 
@@ -441,81 +453,121 @@ for i = 1 to mdnHeader.vertDefCount do (
 )
 
 -----------------count6------------------
-
-count6 = #()
-
-for i = 1 to mdnHeader.count6 do (
-
-	temp = MdnCount6()
-	
-	temp.size = readBElong f
-	temp.hashName = readBElong f
-	temp.count = readBElong f
-	temp.count2 = readBElong f
-	temp.count3 = readBElong f
-	temp.count4 = readBElong f
-	temp.count5 = readBElong f
-	temp.count6 = readBElong f
-	temp.count7 = readBElong f
-	temp.count8 = readBElong f
-	temp.count9 = readBElong f
-	temp.count10 = readBElong f
-	temp.someX = readHalfFloat f
-	temp.someY = readHalfFloat f
-	temp.someZ = readHalfFloat f
-	temp.someW = readHalfFloat f
-	temp.someX2 = readHalfFloat f
-	temp.someY2 = readHalfFloat f
-	temp.someZ2 = readHalfFloat f
-	temp.someW2 = readHalfFloat f
-	temp.someX3 = readHalfFloat f
-	temp.someY3 = readHalfFloat f
-	temp.someZ3 = readHalfFloat f
-	temp.someW3 = readHalfFloat f
-	temp.someX4 = readHalfFloat f
-	temp.someY4 = readHalfFloat f
-	temp.someZ4 = readHalfFloat f
-	temp.someW4 = readHalfFloat f
-	temp.nullBytes = readlonglong f
-	temp.nullBytes2 = readlonglong f
-	temp.nullBytes3 = readlonglong f
-	temp.nullBytes4 = readlonglong f
-	
-	append count6 temp
-	
-)
-
-print count6[1].someW2
-
-------------materialIndex----------------------
-
+---the real material index---
 materialIdx = #()
 
 for i = 1 to mdnHeader.materialCount do (
+
 	mat = MdnMaterialIndex()
 	
+	mat.flag = readBElong f
 	mat.hashName = readBElong f
-	mat.x = readBEfloat f
-	mat.y = readBEfloat f
-	mat.z = readBEfloat f
-	mat.nullBytes = readlonglong f
-	mat.nullBytes2 = readlonglong f
+	mat.textureCount = readBElong f
+	mat.colourCount = readBElong f
+	mat.diffuseIndex = readBElong f
+	mat.normalIndex = readBElong f
+	mat.specularIndex = readBElong f
+	mat.filterIndex = readBElong f
+	mat.ambientIndex = readBElong f
+	mat.specGradientIndex = readBElong f
+	mat.unknownIndex = readBElong f
+	mat.unknown2Index = readBElong f
+	mat.diffuseR = readHalfFloat f
+	mat.diffuseG = readHalfFloat f
+	mat.diffuseB = readHalfFloat f
+	mat.diffuseA = readHalfFloat f
+	mat.specularR = readHalfFloat f
+	mat.specularG = readHalfFloat f
+	mat.specularB = readHalfFloat f
+	mat.specularA = readHalfFloat f
+	mat.unknownR = readHalfFloat f
+	mat.unknownG = readHalfFloat f
+	mat.unknownB = readHalfFloat f
+	mat.unknownA = readHalfFloat f
+	mat.unknownR2 = readHalfFloat f
+	mat.unknownG2 = readHalfFloat f
+	mat.unknownB2 = readHalfFloat f
+	mat.unknownA2 = readHalfFloat f
+	mat.unknownR3 = readHalfFloat f
+	mat.unknownG3 = readHalfFloat f
+	mat.unknownB3 = readHalfFloat f
+	mat.unknownA3 = readHalfFloat f
+	mat.unknownR4 = readHalfFloat f
+	mat.unknownG4 = readHalfFloat f
+	mat.unknownB4 = readHalfFloat f
+	mat.unknownA4 = readHalfFloat f
+	mat.unknownR5 = readHalfFloat f
+	mat.unknownG5 = readHalfFloat f
+	mat.unknownB5 = readHalfFloat f
+	mat.unknownA5 = readHalfFloat f
+	mat.unknownR6 = readHalfFloat f
+	mat.unknownG6 = readHalfFloat f
+	mat.unknownB6 = readHalfFloat f
+	mat.unknownA6 = readHalfFloat f
 	
 	append materialIdx mat
 	
 )
 
+print(bit.IntAsHex(ftell f))
+
+------------textureIndex----------------------
+textureIdx = #()
+
+
+for i = 1 to mdnHeader.textureCount do (
+	tex = MdnTextureIndex()
+	
+	tex.hashName = readBElong f
+	tex.x = readBEfloat f
+	tex.y = readBEfloat f
+	tex.z = readBEfloat f
+	tex.nullBytes = readlonglong f
+	tex.nullBytes2 = readlonglong f
+	
+	append textureIdx tex
+	
+)
+
+print(bit.IntAsHex(ftell f))
+
 mat = multimaterial numsubs: (mdnHeader.materialCount)
 
 for i = 1 to mdnHeader.materialCount do (
 	mat[i] = StandardMaterial name:(bit.intAsHex(materialIdx[i].hashName) as string)
-	mat[i].diffuseMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(materialIdx[i].hashName) as string) + ".dds")
+	for j = 1 to materialIdx[i].textureCount do ( 
+		case (j) of (
+			0x1: (
+				dIndex = materialIdx[i].diffuseIndex + 1
+				mat[i].diffuseMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[dIndex].hashName) as string) + ".dds")
+			)
+			0x2: (
+				nIndex = materialIdx[i].normalIndex + 1
+				mat[i].bumpMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[nIndex].hashName) as string) + ".dds")
+			)
+			0x3: (
+				sIndex = materialIdx[i].specularIndex + 1
+				mat[i].specularMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[sIndex].hashName) as string) + ".dds")
+			)
+			0x4: (
+				fIndex = materialIdx[i].filterIndex + 1
+				mat[i].filterMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[fIndex].hashName) as string) + ".dds")
+			)
+			0x5: (
+				aIndex = materialIdx[i].ambientIndex + 1
+				mat[i].ambientMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[aIndex].hashName) as string) + ".dds")
+			)
+			0x6: (
+				sGradIndex = materialIdx[i].specGradientIndex + 1
+				mat[i].selfillumMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[sGradIndex].hashName) as string) + ".dds")
+			)
+			default: (
+				print("I dont know that one, need to add it")
+			)
+		)		
+	)	
 	mat[i].showInViewPort = on
-	--append materialBuffer newMat
 )
-
-
-matId = findItem materialBuffer 1
 
 
 -----------bonePalletIndex-----------------------
@@ -651,7 +703,7 @@ for s = 1 to mdnHeader.meshCount do (
 
 
 ---------------------makeMesh------------------------------------------
-
+--for s = 2 to 2 do (
 for s = 1 to mdnHeader.meshCount do (
 	
 	msh = mesh vertices:vertexBuffer[s] faces:faceBuffer[s] material: mat
@@ -668,10 +720,18 @@ for s = 1 to mdnHeader.meshCount do (
 ------------------------materialStuff----------------------------------	
 
 	g = 1
-	
 	for j = 1 to (vertCountIdx[s].faceSectionCount) do (
-		
+		print s
+		print "applying"
+		print (faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].matGroup)
 		for n = 1 to ((faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].count / 3)) do (
+			
+			--print "s is:"
+			--print s
+			--print "g is:"
+			--print g
+			--print "mat group is:"
+			--print (faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].matGroup)
 			setFaceMatId msh g ((faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].matGroup) +1)
 			g= g + 1
 		)		
