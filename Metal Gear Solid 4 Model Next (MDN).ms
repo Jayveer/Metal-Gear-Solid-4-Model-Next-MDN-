@@ -91,7 +91,7 @@ struct Header (
 	magic,
 	filename,
 	boneCount,
-	count2,
+	meshGroupCount,
 	meshCount,
 	faceCount,
 	vertDefCount,
@@ -99,7 +99,7 @@ struct Header (
 	textureCount,
 	bonePalletCount,
 	boneOffset,
-	count2Offset,
+	meshGroupOffset,
 	vertCountOffset,
 	faceCountOffset,
 	vertDefOffset,
@@ -148,7 +148,7 @@ struct MdnBones (
 	sclW2
 )
 
-struct MdnCount2 (
+struct MdnMeshGroup (
 	hashName,
 	nullbytes,
 	parent,
@@ -156,7 +156,7 @@ struct MdnCount2 (
 )
 
 struct MdnVertCountIndex (
-	unknown,
+	meshGroupIdx,
 	unknown2,
 	faceSectionCount,
 	faceSectionStart,
@@ -208,7 +208,7 @@ struct MdnMaterialIndex (
 	filterIndex,
 	ambientIndex,
 	specGradientIndex,
-	unknownIndex,
+	wrinkleIndex,
 	unknown2Index,
 	diffuseR,
 	diffuseG,
@@ -268,7 +268,7 @@ mdnHeader = Header()
 mdnHeader.magic = readBElong f
 mdnHeader.filename = readBElong f
 mdnHeader.boneCount = readBElong f
-mdnHeader.count2 = readBElong f
+mdnHeader.meshGroupCount = readBElong f
 mdnHeader.meshCount = readBElong f
 mdnHeader.faceCount = readBElong f
 mdnHeader.vertDefCount = readBElong f
@@ -276,7 +276,7 @@ mdnHeader.materialCount = readBElong f
 mdnHeader.textureCount = readBElong f
 mdnHeader.bonePalletCount = readBElong f
 mdnHeader.boneOffset = readBElong f
-mdnHeader.count2Offset = readBElong f
+mdnHeader.meshGroupOffset = readBElong f
 mdnHeader.vertCountOffset = readBElong f
 mdnHeader.faceCountOffset = readBElong f
 mdnHeader.vertDefOffset = readBElong f
@@ -356,17 +356,26 @@ for i = 1 to mdnHeader.boneCount do (
 
 ---------------meshgroup------------------------
 
-count2 = #()
+meshGroup = #()
 
-for i =1 to mdnHeader.count2 do (
-	aCount = MdnCount2()
+for i =1 to mdnHeader.meshGroupCount do (
+	mshGrp = MdnMeshGroup()
 	
-	aCount.hashName = readBElong f
-	aCount.nullbytes  = readBElong f
-	aCount.parent = readBElong f
-	aCount.unknown = readBElong f
+	mshGrp.hashName = readBElong f
+	mshGrp.nullbytes  = readBElong f
+	mshGrp.parent = readBElong f + 1
+	mshGrp.unknown = readBElong f
 	
-	append count2 aCount
+	append meshGroup mshGrp
+)
+
+for i = 1 to mdnHeader.meshGroupCount do (
+		layer = LayerManager.newLayer()
+		layer.setname (bit.intAsHex(meshGroup[i].hashName) as string)
+		if (meshGroup[i].parent != 0) then (
+			parentLayer = LayerManager.getLayerFromName ((bit.intAsHex(meshGroup[(meshGroup[i].parent)].hashName) as string))
+			layer.setParent parentLayer 
+		) 
 )
 
 ------------------vertexcountIndex-------------------
@@ -376,7 +385,7 @@ vertCountIdx = #()
 for i = 1 to mdnHeader.meshCount do (
 	vCount = MdnVertCountIndex()
 	
-	vCount.unknown = readBElong f
+	vCount.meshGroupIdx = readBElong f
 	vCount.unknown2 = readBElong f
 	vCount.faceSectionCount = readBElong f
 	vCount.faceSectionStart = readBElong f
@@ -452,8 +461,7 @@ for i = 1 to mdnHeader.vertDefCount do (
 	
 )
 
------------------count6------------------
----the real material index---
+-----------------materialindex----------------------------
 materialIdx = #()
 
 for i = 1 to mdnHeader.materialCount do (
@@ -470,16 +478,16 @@ for i = 1 to mdnHeader.materialCount do (
 	mat.filterIndex = readBElong f
 	mat.ambientIndex = readBElong f
 	mat.specGradientIndex = readBElong f
-	mat.unknownIndex = readBElong f
+	mat.wrinkleIndex = readBElong f
 	mat.unknown2Index = readBElong f
-	mat.diffuseR = readHalfFloat f
-	mat.diffuseG = readHalfFloat f
-	mat.diffuseB = readHalfFloat f
-	mat.diffuseA = readHalfFloat f
-	mat.specularR = readHalfFloat f
-	mat.specularG = readHalfFloat f
-	mat.specularB = readHalfFloat f
-	mat.specularA = readHalfFloat f
+	mat.diffuseR = readHalfFloat f * 255
+	mat.diffuseG = readHalfFloat f * 255
+	mat.diffuseB = readHalfFloat f * 255
+	mat.diffuseA = readHalfFloat f * 100
+	mat.specularR = readHalfFloat f * 127.5
+	mat.specularG = readHalfFloat f * 127.5
+	mat.specularB = readHalfFloat f * 127.5
+	mat.specularA = readHalfFloat f		
 	mat.unknownR = readHalfFloat f
 	mat.unknownG = readHalfFloat f
 	mat.unknownB = readHalfFloat f
@@ -508,9 +516,6 @@ for i = 1 to mdnHeader.materialCount do (
 	append materialIdx mat
 	
 )
-
-print(bit.IntAsHex(ftell f))
-
 ------------textureIndex----------------------
 textureIdx = #()
 
@@ -529,7 +534,12 @@ for i = 1 to mdnHeader.textureCount do (
 	
 )
 
-print(bit.IntAsHex(ftell f))
+textureStore =#()
+for i = 1 to mdnHeader.textureCount do (
+	texture = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[i].hashName) as string) + ".dds")
+	append textureStore texture
+)
+
 
 mat = multimaterial numsubs: (mdnHeader.materialCount)
 
@@ -539,35 +549,72 @@ for i = 1 to mdnHeader.materialCount do (
 		case (j) of (
 			0x1: (
 				dIndex = materialIdx[i].diffuseIndex + 1
-				mat[i].diffuseMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[dIndex].hashName) as string) + ".dds")
+				mat[i].diffuseMap = textureStore[dIndex]
+				
+				if materialIdx[i].flag == 0xA3 or materialIdx[i].flag == 0xE0 or materialIdx[i].flag == 0xA6 then (
+					mat[i].opacityMap = textureStore[dIndex]
+					if materialIdx[i].flag != 0xA6 then (
+						textureStore[dIndex].monoOutput = 1
+					)
+				)
 			)
 			0x2: (
 				nIndex = materialIdx[i].normalIndex + 1
-				mat[i].bumpMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[nIndex].hashName) as string) + ".dds")
+				mat[i].bumpMap = textureStore[nIndex]
 			)
 			0x3: (
 				sIndex = materialIdx[i].specularIndex + 1
-				mat[i].specularMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[sIndex].hashName) as string) + ".dds")
+				mat[i].specularMap = textureStore[sIndex]
+				mat[i].specularLevelMap = textureStore[sIndex]
+				mat[i].glossinessMap = textureStore[sIndex]
 			)
 			0x4: (
 				fIndex = materialIdx[i].filterIndex + 1
-				mat[i].filterMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[fIndex].hashName) as string) + ".dds")
+				mat[i].filterMap = textureStore[fIndex]
 			)
 			0x5: (
 				aIndex = materialIdx[i].ambientIndex + 1
-				mat[i].ambientMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[aIndex].hashName) as string) + ".dds")
+				mat[i].ambientMap = textureStore[aIndex]
 			)
 			0x6: (
 				sGradIndex = materialIdx[i].specGradientIndex + 1
-				mat[i].selfillumMap = Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[sGradIndex].hashName) as string) + ".dds")
+				mat[i].selfillumMap = textureStore[sGradIndex] 
+			)
+			0x7: (
+				wIndex = materialIdx[i].wrinkleIndex + 1
+				--would have to add composite material to add wrinkle maps
+				--Bitmaptexture fileName:(sysInfo.currentdir + "\\textures\\" + (bit.intAsHex(textureIdx[wIndex].hashName) as string) + ".dds")
 			)
 			default: (
-				print("I dont know that one, need to add it")
+				print j
+				print("I dont know that texture, need to add it")
 			)
 		)		
 	)	
+	
+	for j = 1 to materialIdx[i].colourCount do ( 
+		case (j) of (
+			0x1: (
+				mat[i].Diffuse = color materialIdx[i].diffuseR materialIdx[i].diffuseG materialIdx[i].diffuseB
+				mat[i].opacity = materialIdx[i].diffuseA
+			)
+			0x2: (
+				mat[i].Specular = color materialIdx[i].specularR materialIdx[i].specularG materialIdx[i].specularB
+				mat[i].specularLevel = materialIdx[i].specularA
+			)
+			0x3: (
+			)
+			default: (
+				--print j
+				--print("I dont know that colour, need to add it")
+			)
+		)
+	)
+	
 	mat[i].showInViewPort = on
+	mat[i].shaderType = 5
 )
+
 
 
 -----------bonePalletIndex-----------------------
@@ -721,17 +768,7 @@ for s = 1 to mdnHeader.meshCount do (
 
 	g = 1
 	for j = 1 to (vertCountIdx[s].faceSectionCount) do (
-		print s
-		print "applying"
-		print (faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].matGroup)
 		for n = 1 to ((faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].count / 3)) do (
-			
-			--print "s is:"
-			--print s
-			--print "g is:"
-			--print g
-			--print "mat group is:"
-			--print (faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].matGroup)
 			setFaceMatId msh g ((faceCountIdx[(vertCountIdx[s].faceSectionStart + j)].matGroup) +1)
 			g= g + 1
 		)		
@@ -765,6 +802,11 @@ for s = 1 to mdnHeader.meshCount do (
 		
 	)
 	update msh
+	
+---------------------addtomeshgroup-------------------------------------
+	parentLayer = LayerManager.getLayerFromName (bit.intAsHex(meshGroup[(vertCountIdx[s].meshGroupIdx + 1)].hashName) as string)
+	parentLayer.addNode msh	
+	
 )
 )
 ---------------------cleanUpAndFinish------------------------------------
