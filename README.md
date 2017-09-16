@@ -1,0 +1,1 @@
+This is a maxscript to import models from the game Metal Gear Solid 4 into 3ds max. It will import the mesh, bones, skinning information. It will automatically apply textures but you must have them in a folder named textures within the same directory as the mdn file. The textures must also be named their hashed filename.
